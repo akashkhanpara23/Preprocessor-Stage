@@ -42,6 +42,7 @@ int main(int argc, char *argv[]){
 
         *(buf1 + r) = (char *)malloc(40);
         if(buf[j] == ' '){
+            k=0;
             for(k = 0, j = j+1; (buf[j] != ' ');j++)
             buf1[r][k++] = buf[j];
         }
@@ -63,6 +64,10 @@ int main(int argc, char *argv[]){
         i = 0;
 
         fdt = fopen("temp.txt","w");
+        if (fdt == NULL) {
+            perror("Failed to open temp.txt");
+            return 1;
+        }
         while((stop = strstr(buf+i,buf1[q])) != NULL){
             for(j = stop-buf;i < j; i++)
             fputc(buf[i], fdt);
@@ -85,9 +90,14 @@ int main(int argc, char *argv[]){
 
         if(!(q == r-1)){
             fdt = fopen("temp.txt","r");
+            if (fdt == NULL) { 
+                perror("Failed to open temp.txt");
+                return 1;
+            }
             for(z = 0;(ch = fgetc(fdt)) != EOF; z++)
             buf[z] = ch;
             buf[z] = '\0';
+            fclose(fdt);
         }
         q++;
     }
@@ -95,29 +105,32 @@ int main(int argc, char *argv[]){
     fdt = fopen("temp.txt","r");
     fh = fopen("temp2.txt","w");
 
-    char def[] = "define", def1[8];
-    while((ch = fgetc(fdt)) != EOF){
-        if(ch == '#'){
-            if((strcmp((fgets(def1,7,fdt)),def)) == 0){
-                while((ch = fgetc(fdt)) != '\n')
-                continue;
-
+        char def[] = "define", def1[8];
+    while ((ch = fgetc(fdt)) != EOF) {
+        if (ch == '#') {
+            fgets(def1, 7, fdt);
+            if (strcmp(def1, "define") == 0) {
+                while ((ch = fgetc(fdt)) != '\n' && ch != EOF);
+            } else {
                 fputc(ch, fh);
+                fputs(def1, fh);
             }
-            else{
-                fputc(ch, fh);
-                fseek(fdt, -(strlen(def1)), SEEK_CUR);
-            }
+        } else {
+            fputc(ch, fh);
         }
-        else
-        fputc(ch, fh);
     }
 
-    fcloseall();
+    fclose(fh);
+    fclose(fdt);
     fh = fopen("temp2.txt","r"), fdt = fopen("temp.txt","w");
     while((ch = fgetc(fh)) != -1)
     fputc(ch, fdt);
-
-    fcloseall();
+    for (int i = 0; i < r; i++) {
+        free(buf1[i]);
+        free(buf2[i]);
+    }
+    fclose(fh);
+    fclose(fdt);
+    remove("temp.txt");
     remove("temp2.txt");
 }
